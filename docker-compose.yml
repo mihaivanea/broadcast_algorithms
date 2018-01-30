@@ -1,0 +1,49 @@
+
+# distributed algorithms, n.dulay, 8 jan 18
+# docker-compose.yml, v1
+
+version: "3.4"
+
+x-common:
+  &defaults
+    image: elixir:alpine
+    volumes:
+      - .:/project
+    working_dir: /project
+    networks:
+      - network
+
+networks:
+  network:
+    driver: bridge
+
+services:
+  container0.localdomain:
+    container_name: container0
+    command: > 
+      elixir --name node0@container0.localdomain --cookie pass 
+             -S mix run --no-halt -e ${MAIN} 
+    depends_on:
+      - container1.localdomain
+      - container2.localdomain
+    <<: *defaults
+
+  container1.localdomain:
+    container_name: container1
+    command: > 
+      elixir --name node1@container1.localdomain --cookie pass 
+             -S mix run --no-halt 
+    <<: *defaults
+
+  container2.localdomain:
+    container_name: container2
+    command: >
+      elixir --name node2@container2.localdomain --cookie pass 
+             -S mix run --no-halt 
+    <<: *defaults
+
+# MISC
+# - anchors only available in version 3.5, ditto x- services
+# - macvlan network driver also works
+# - tabs are a no-no, use spaces
+
