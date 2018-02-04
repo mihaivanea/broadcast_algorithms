@@ -8,7 +8,7 @@ defmodule Peer do
         received_from_counts = []
         sent_to_counts = for _ <- neighbours, do: sent_to_counts ++ 0
         received_from_counts = for _ <- neighbours, do: received_from_counts ++ 0
-        next(neighbours, nil, nil, sent_to_counts, received_from_counts)
+        next(neighbours, nil, 3000, sent_to_counts, received_from_counts)
     end
   end
 
@@ -32,14 +32,12 @@ defmodule Peer do
   end
 
   defp print_state(neighbours, sent_to_counts, received_from_counts) do
-    out_string = inspect(Enum.find_index(neighbours, fn x -> x == self() end)) <> ":"
+    out_index = inspect(Enum.find_index(neighbours, fn x -> x == self() end)) <> ":"
     out_list = merge_lists(sent_to_counts, received_from_counts) 
     out_counts = []
     out_counts = for l <- out_list, do: out_counts = out_counts ++ to_int(l) 
-    out_counts = Enum.join(out_counts, " ")
-    IO.puts(out_counts)
-    #out_string = out_string <> out_counts
-    IO.puts(out_string)
+    out_counts = Enum.join(out_counts, "")
+    IO.puts(out_index <> out_counts)
   end
 
   def to_int(x) do
