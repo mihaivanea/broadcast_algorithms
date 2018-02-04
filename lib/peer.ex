@@ -4,36 +4,53 @@ defmodule Peer do
     IO.puts(["Peer at ", DNS.my_ip_addr])
     receive do
       {:bind, neighbours} -> 
-        sent_to_counts = %{}
-        received_from_counts = %{}
-        for n <- neighbours, do:
-          Map.put(sent_to_counts, n, 0)
-          Map.put(received_from_counts, n, 0)
-        next(neighbours, max_broadcast, timeout, sent_to_counts, received_from_counts)
+        sent_to_counts = []
+        received_from_counts = []
+        sent_to_counts = for _ <- neighbours, do: sent_to_counts ++ 0
+        received_from_counts = for _ <- neighbours, do: received_from_counts ++ 0
+        next(neighbours, nil, nil, sent_to_counts, received_from_counts)
     end
   end
 
-  defp next(neighbours, max_broadcast, timeout, sent_to_counts, received_from_counts) do
+  defp next(neighbours, max_broadcasts, timeout, sent_to_counts, received_from_counts) do
     receive do
-      {:broadcast, broadcast, timeout} -> 
+      {:broadcast, max_broadcasts, timeout} -> 
         for n <- neighbours, do:
-          send(n, {:msg, self()}) 
-          sent_to_counts = sent_to_counts[n] + 1
-        next(neighbours, max_broadcast - 1, timeout, sent_to_counts, received_from_counts)
-      {:}
+          send(n, {:msg, self()})
+        sent_to_counts = Enum.map(sent_to_counts, fn x -> x + 1 end)
+        next(neighbours, max_broadcasts - 1, timeout, sent_to_counts, received_from_counts)
+      {:msg, source} ->
+        received_from_index = 
+          Enum.find_index(neighbours, fn x -> x == source end)
+        old_val = Enum.at(received_from_counts, received_from_index)
+        received_from_counts = 
+          List.replace_at(received_from_counts, received_from_index, old_val + 1) 
+        next(neighbours, max_broadcasts, timeout, sent_to_counts, received_from_counts)
     after timeout -> 
-      puts("Peer #{inspect(self())} ")
-
+      print_state(neighbours, sent_to_counts, received_from_counts)
     end
   end
 
-  defp forward(neighbours, count) do
-    if count == 0 do
-      for n <- neighbours, do: send n, {:hello} 
-      next(neighbours, count + 1)
+  defp print_state(neighbours, sent_to_counts, received_from_counts) do
+    out_string = inspect(Enum.find_index(neighbours, fn x -> x == self() end)) <> ":"
+    out_list = merge_lists(sent_to_counts, received_from_counts) 
+    out_counts = []
+    out_counts = for l <- out_list, do: out_counts = out_counts ++ to_int(l) 
+    out_counts = Enum.join(out_counts, " ")
+    IO.puts(out_counts)
+    #out_string = out_string <> out_counts
+    IO.puts(out_string)
+  end
+
+  def to_int(x) do
+    if is_number(x) do
+      Integer.to_charlist(x)
     else
-      next(neighbours, count + 1)
+      x
     end
   end
+
+  def merge_lists([h1], [h2]) do [" {", h1, ",", h2, "}"] end
+  def merge_lists([h1|t1], [h2|t2]) do [" {", h1, ",", h2, "}"] ++ merge_lists(t1, t2) end
 
 end
