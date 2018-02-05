@@ -4,46 +4,66 @@ defmodule Peer do
     IO.puts(["Peer at ", DNS.my_ip_addr])
     receive do
       {:bind, neighbours} -> 
-        sent_to_counts = []
+        state = %{}
+        sent_counts = []
         received_counts = []
-        sent_to_counts = for _ <- neighbours, do: sent_to_counts ++ 0
+        sent_counts = for _ <- neighbours, do: sent_counts ++ 0
         received_counts = for _ <- neighbours, do: received_counts ++ 0
-        next(neighbours, nil, nil, sent_to_counts, received_counts)
+        state = Map.put(state, :neighbours, neighbours)
+        state = Map.put(state, :msgs_left, nil)
+        state = Map.put(state, :deadline, :infinity)
+        state = Map.put(state, :sent_counts, sent_counts)
+        state = Map.put(state, :received_counts, received_counts)
+        next(state)
     end
   end
 
-  defp next(neighbours, max_broadcasts, timeout, sent_to_counts, received_counts) do
+  # Wait for broadcast
+  defp next(state) do
     receive do
-      {:broadcast, max_broadcasts, timeout} -> 
-        #IO.puts("BROADCAST")
-        broadcast(neighbours, max_broadcasts, timeout, sent_to_counts, received_counts, 1) 
-      {:msg, source} ->
-        #IO.puts("RECEIVE")
-        received_index = 
-          Enum.find_index(neighbours, fn x -> x == source end)
-        old_val = Enum.at(received_counts, received_index)
-        received_counts = 
-          List.replace_at(received_counts, received_index, old_val + 1) 
-        next(neighbours, max_broadcasts, timeout, sent_to_counts, received_counts)
-    after timeout -> 
-      print_state(neighbours, sent_to_counts, received_counts)
+      {:broadcast, msgs_left, timeout} -> 
+        state = Map.update!(state, :msgs_left, fn _ -> msgs_left end)
+        state = Map.update!(state, :deadline, fn _ -> timeout + clock() end)
+        broadcast(state)
+    after 0 -> 
+      print_state(state)
     end
   end
 
-  def broadcast(neighbours, max_broadcasts, timeout, sent_to_counts, received_counts, no_msgs) do
-    if no_msgs == 0 do
-      next(neighbours, max_broadcasts - no_msgs, timeout, sent_to_counts, received_counts)
-    else
-      for n <- neighbours, do:
+  defp broadcast(state) do
+    if clock() < state[:deadline] and state[:msgs_left] > 0 do
+      for n <- state[:neighbours], do:
         send(n, {:msg, self()})
-      sent_to_counts = Enum.map(sent_to_counts, fn x -> x + 1 end)
-      broadcast(neighbours, max_broadcasts, timeout, sent_to_counts, received_counts, no_msgs - 1)
+      state = Map.update!(state, :msgs_left, fn x -> x - 1 end)
+      state = Map.update!(state, :sent_counts, fn _ -> Enum.map(state[:sent_counts], fn x -> x + 1 end) end)
+      process(state)
+    else
+      next(state)
     end
   end
 
-  defp print_state(neighbours, sent_to_counts, received_counts) do
-    out_index = inspect(Enum.find_index(neighbours, fn x -> x == self() end)) <> ":"
-    out_list = merge_lists(sent_to_counts, received_counts) 
+  defp process(state) do
+    receive do
+      {:msg, source} ->
+        if clock() < state[:deadline] do
+          received_index = 
+            Enum.find_index(state[:neighbours], fn x -> x == source end)
+          old_val = Enum.at(state[:received_counts], received_index)
+          state = Map.update!(state, :received_counts, fn _ -> List.replace_at(state[:received_counts], received_index, old_val + 1) end)
+          broadcast(state)
+        else
+          next(state)
+        end
+    end
+  end
+
+  defp clock() do
+    System.system_time(:milliseconds)
+  end
+
+  defp print_state(state) do
+    out_index = inspect(Enum.find_index(state[:neighbours], fn x -> x == self() end)) <> ":"
+    out_list = merge_lists(state[:sent_counts], state[:received_counts]) 
     out_counts = []
     out_counts = for l <- out_list, do: out_counts = out_counts ++ to_int(l) 
     out_counts = Enum.join(out_counts, "")
