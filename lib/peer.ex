@@ -35,14 +35,18 @@ defmodule Peer do
         send(n, {:msg, self()})
       state = Map.update!(state, :msgs_left, fn x -> x - 1 end)
       state = Map.update!(state, :sent_counts, fn _ -> Enum.map(state[:sent_counts], fn x -> x + 1 end) end)
-      process(state)
+      process(state, length(state[:neighbours]))
     else
       send(self(), {:finished})
       next(state)
     end
   end
 
-  defp process(state) do
+  defp process(state, 0) do
+    broadcast(state)
+  end
+
+  defp process(state, n) do
     receive do
       {:msg, source} ->
         if clock() < state[:deadline] do
@@ -50,7 +54,7 @@ defmodule Peer do
             Enum.find_index(state[:neighbours], fn x -> x == source end)
           old_val = Enum.at(state[:received_counts], received_index)
           state = Map.update!(state, :received_counts, fn _ -> List.replace_at(state[:received_counts], received_index, old_val + 1) end)
-          broadcast(state)
+          process(state, n - 1)
         else
           send(self(), {:finished})
           next(state)
