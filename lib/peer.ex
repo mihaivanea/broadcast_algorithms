@@ -18,15 +18,14 @@ defmodule Peer do
     end
   end
 
-  # Wait for broadcast
   defp next(state) do
     receive do
       {:broadcast, msgs_left, timeout} -> 
         state = Map.update!(state, :msgs_left, fn _ -> msgs_left end)
         state = Map.update!(state, :deadline, fn _ -> timeout + clock() end)
         broadcast(state)
-    after 0 -> 
-      print_state(state)
+      {:finished} -> 
+        print_state(state)
     end
   end
 
@@ -38,6 +37,7 @@ defmodule Peer do
       state = Map.update!(state, :sent_counts, fn _ -> Enum.map(state[:sent_counts], fn x -> x + 1 end) end)
       process(state)
     else
+      send(self(), {:finished})
       next(state)
     end
   end
@@ -52,6 +52,7 @@ defmodule Peer do
           state = Map.update!(state, :received_counts, fn _ -> List.replace_at(state[:received_counts], received_index, old_val + 1) end)
           broadcast(state)
         else
+          send(self(), {:finished})
           next(state)
         end
     end
@@ -64,8 +65,7 @@ defmodule Peer do
   defp print_state(state) do
     out_index = inspect(Enum.find_index(state[:neighbours], fn x -> x == self() end)) <> ":"
     out_list = merge_lists(state[:sent_counts], state[:received_counts]) 
-    out_counts = []
-    out_counts = for l <- out_list, do: out_counts = out_counts ++ to_int(l) 
+    out_counts = Enum.map(out_list, fn x -> to_int(x) end)
     out_counts = Enum.join(out_counts, "")
     IO.puts(out_index <> out_counts)
   end

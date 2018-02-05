@@ -8,6 +8,7 @@ defmodule System1 do
     timeout = 3000
     peers = for _ <- 1..no_peers, do:
       peers ++ Node.spawn(:'node1@container1.localdomain', Peer, :start, [])
+    IO.puts(inspect(peers))
     for p <- peers, do: 
       send p, {:bind, peers}
     for p <- peers, do:

@@ -25,20 +25,12 @@ services:
              -S mix run --no-halt -e ${MAIN} 
     depends_on:
       - container1.localdomain
-      - container2.localdomain
     <<: *defaults
 
   container1.localdomain:
     container_name: container1
     command: > 
       elixir --name node1@container1.localdomain --cookie pass 
-             -S mix run --no-halt 
-    <<: *defaults
-
-  container2.localdomain:
-    container_name: container2
-    command: >
-      elixir --name node2@container2.localdomain --cookie pass 
              -S mix run --no-halt 
     <<: *defaults
 
