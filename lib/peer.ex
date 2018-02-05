@@ -9,11 +9,15 @@ defmodule Peer do
         received_counts = []
         sent_counts = for _ <- neighbours, do: sent_counts ++ 0
         received_counts = for _ <- neighbours, do: received_counts ++ 0
+        broadcast_batch = 1
+        processing_batch = 5
         state = Map.put(state, :neighbours, neighbours)
         state = Map.put(state, :msgs_left, nil)
         state = Map.put(state, :deadline, :infinity)
         state = Map.put(state, :sent_counts, sent_counts)
         state = Map.put(state, :received_counts, received_counts)
+        state = Map.put(state, :broadcast_batch, broadcast_batch)
+        state = Map.put(state, :processing_batch, processing_batch)
         next(state)
     end
   end
@@ -23,19 +27,23 @@ defmodule Peer do
       {:broadcast, msgs_left, timeout} -> 
         state = Map.update!(state, :msgs_left, fn _ -> msgs_left end)
         state = Map.update!(state, :deadline, fn _ -> timeout + clock() end)
-        broadcast(state)
+        broadcast(state, state[:broadcast_batch])
       {:finished} -> 
         print_state(state)
     end
   end
 
-  defp broadcast(state) do
+  defp broadcast(state, 0) do
+    process(state, state[:processing_batch])
+  end
+
+  defp broadcast(state, n) do
     if clock() < state[:deadline] and state[:msgs_left] > 0 do
       for n <- state[:neighbours], do:
         send(n, {:msg, self()})
       state = Map.update!(state, :msgs_left, fn x -> x - 1 end)
       state = Map.update!(state, :sent_counts, fn _ -> Enum.map(state[:sent_counts], fn x -> x + 1 end) end)
-      process(state, length(state[:neighbours]))
+      broadcast(state, n - 1)
     else
       send(self(), {:finished})
       next(state)
@@ -43,7 +51,7 @@ defmodule Peer do
   end
 
   defp process(state, 0) do
-    broadcast(state)
+    broadcast(state, state[:broadcast_batch])
   end
 
   defp process(state, n) do
