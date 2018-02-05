@@ -1,6 +1,4 @@
-
-# distributed algorithms, n.dulay, 8 jan 18
-# Makefile, v1
+# Mihail Vanea (mv1315)
 
 MAIN    = System1.main
 PROJECT = da347

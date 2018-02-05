@@ -1,5 +1,4 @@
-
-# distributed algorithms, n.dulay, 4 jan 17
+# Mihail Vanea (mv1315)
 # DNS lookup functions
 
 defmodule DNS do

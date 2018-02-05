@@ -1,9 +1,11 @@
-defmodule ClientServer.Mixfile do
+# Mihail Vanea (mv1315)
+
+defmodule BroadcastAlgorithms.Mixfile do
   use Mix.Project
 
   def project do
     [
-      app: :client_server,
+      app: :broadcast_algorithms,
       version: "0.1.0",
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,

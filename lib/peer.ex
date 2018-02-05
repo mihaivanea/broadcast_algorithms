@@ -1,3 +1,5 @@
+# Mihail Vanea (mv1315)
+
 defmodule Peer do
 
   def start() do
@@ -42,7 +44,8 @@ defmodule Peer do
       for n <- state[:neighbours], do:
         send(n, {:msg, self()})
       state = Map.update!(state, :msgs_left, fn x -> x - 1 end)
-      state = Map.update!(state, :sent_counts, fn _ -> Enum.map(state[:sent_counts], fn x -> x + 1 end) end)
+      state = Map.update!(state, :sent_counts, fn _ -> Enum.map(
+        state[:sent_counts], fn x -> x + 1 end) end)
       broadcast(state, n - 1)
     else
       send(self(), {:finished})
