@@ -61,7 +61,8 @@ defmodule Peer do
           received_index = 
             Enum.find_index(state[:neighbours], fn x -> x == source end)
           old_val = Enum.at(state[:received_counts], received_index)
-          state = Map.update!(state, :received_counts, fn _ -> List.replace_at(state[:received_counts], received_index, old_val + 1) end)
+          state = Map.update!(state, :received_counts, fn _ -> List.replace_at(
+            state[:received_counts], received_index, old_val + 1) end)
           process(state, n - 1)
         else
           send(self(), {:finished})
@@ -75,7 +76,8 @@ defmodule Peer do
   end
 
   defp print_state(state) do
-    out_index = inspect(Enum.find_index(state[:neighbours], fn x -> x == self() end)) <> ":"
+    out_index = inspect(Enum.find_index(state[:neighbours], 
+      fn x -> x == self() end)) <> ":"
     out_list = merge_lists(state[:sent_counts], state[:received_counts]) 
     out_counts = Enum.map(out_list, fn x -> to_int(x) end)
     out_counts = Enum.join(out_counts, "")
@@ -90,7 +92,12 @@ defmodule Peer do
     end
   end
 
-  defp merge_lists([h1], [h2]) do [" {", h1, ",", h2, "}"] end
-  defp merge_lists([h1|t1], [h2|t2]) do [" {", h1, ",", h2, "}"] ++ merge_lists(t1, t2) end
+  defp merge_lists([h1], [h2]) do 
+    [" {", h1, ",", h2, "}"] 
+  end
+
+  defp merge_lists([h1|t1], [h2|t2]) do 
+    [" {", h1, ",", h2, "}"] ++ merge_lists(t1, t2) 
+  end
 
 end
