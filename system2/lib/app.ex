@@ -5,7 +5,7 @@ defmodule App do
   def start() do
     IO.puts(["App at ", DNS.my_ip_addr])
     receive do
-      {:bind, neighbours} -> 
+      {:bind, neighbours, system2} -> 
         state = %{}
         sent_counts = []
         received_counts = []
@@ -21,15 +21,19 @@ defmodule App do
         state = Map.put(state, :broadcast_batch, broadcast_batch)
         state = Map.put(state, :processing_batch, processing_batch)
         state = Map.put(state, :processing_batch, processing_batch)
-        state = Map.put(state, :app_pl, nil)
+        state = Map.put(state, :app_pl, %{})
+        state = Map.put(state, :system2, system2)
         next(state)
     end
   end
 
   defp next(state) do
     receive do
-      {:swtich, app_pl} ->
-        state = Map.update!(state, :app_pl, app_pl)
+      {:switch, app_pl} ->
+        state = Map.put(state, :app_pl, app_pl)
+        app_neighbours = Map.keys(state[:app_pl])
+        state = Map.put(state, :neighbours, app_neighbours)
+        send(state[:system2], {:ready})
         next(state)
       {:broadcast, msgs_left, timeout} -> 
         state = Map.update!(state, :msgs_left, fn _ -> msgs_left end)
@@ -47,7 +51,7 @@ defmodule App do
   defp broadcast(state, n) do
     if clock() < state[:deadline] and state[:msgs_left] > 0 do
       for n <- state[:neighbours], do:
-        send(n, {:msg, self()})
+        send(state[:app_pl][self()], {:pl_deliver, n, {:msg, self()}})
       state = Map.update!(state, :msgs_left, fn x -> x - 1 end)
       state = Map.update!(state, :sent_counts, fn _ -> Enum.map(
         state[:sent_counts], fn x -> x + 1 end) end)
