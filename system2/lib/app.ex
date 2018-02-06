@@ -20,12 +20,17 @@ defmodule App do
         state = Map.put(state, :received_counts, received_counts)
         state = Map.put(state, :broadcast_batch, broadcast_batch)
         state = Map.put(state, :processing_batch, processing_batch)
+        state = Map.put(state, :processing_batch, processing_batch)
+        state = Map.put(state, :app_pl, nil)
         next(state)
     end
   end
 
   defp next(state) do
     receive do
+      {:swtich, app_pl} ->
+        state = Map.update!(state, :app_pl, app_pl)
+        next(state)
       {:broadcast, msgs_left, timeout} -> 
         state = Map.update!(state, :msgs_left, fn _ -> msgs_left end)
         state = Map.update!(state, :deadline, fn _ -> timeout + clock() end)

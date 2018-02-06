@@ -2,16 +2,20 @@ defmodule PL do
 
   def start() do
     IO.puts(["PL at ", DNS.my_ip_addr])
-    next([])
+    next(nil)
   end
 
-  defp next(pl_list) do
+  defp next(app_pl) do
     receive do
-      {:bind, new_pl_list} -> 
-        pl_list = new_pl_list 
-        next(new_pl_list)
-        #{:pl_send, message, to} ->  
+      {:bind, new_app_pl} -> 
+        next(new_app_pl)
+      {:switch, app_pl} ->
+        p2p_link()
     end
+  end
+
+  defp p2p_link() do
+    IO.puts("HERE")
   end
 
 end
