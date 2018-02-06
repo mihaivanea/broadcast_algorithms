@@ -7,7 +7,7 @@ defmodule Peer do
     receive do
       {:start, system2} -> 
         pl = Node.spawn(:'node1@container1.localdomain', PL, :start, [])
-        app = Node.spawn(:'node1@container1.localdomain', App, :start. [])
+        app = Node.spawn(:'node1@container1.localdomain', App, :start, [])
         next(system2, pl, app)
     end
   end
