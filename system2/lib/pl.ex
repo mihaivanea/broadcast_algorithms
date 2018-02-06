@@ -19,9 +19,11 @@ defmodule PL do
       {:broadcast, max_broadcasts, timeout} ->
         send(app, {:broadcast, max_broadcasts, timeout})
         p2p_link(app_pl, app)
-      {:pl_deliver, destination, message} ->
-        IO.puts("HERE")
-        send(app_pl[destination], message)
+      {:pl_deliver, :msg, source} ->
+        send(app, {:msg, source})
+        p2p_link(app_pl, app)
+      {destination, :msg, source} ->
+        send(app_pl[destination], {:pl_deliver, :msg, source})
         p2p_link(app_pl, app)
     end
   end

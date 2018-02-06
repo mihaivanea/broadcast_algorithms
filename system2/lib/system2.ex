@@ -36,7 +36,7 @@ defmodule System2 do
     max_broadcasts = 1000
     timeout = 3000
     for pl <- Map.values(app_pl), do:
-      send(pl, {:pl_send, :broadcast, max_broadcasts, timeout})
+      send(pl, {:broadcast, max_broadcasts, timeout})
   end
 
 

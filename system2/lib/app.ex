@@ -51,7 +51,7 @@ defmodule App do
   defp broadcast(state, n) do
     if clock() < state[:deadline] and state[:msgs_left] > 0 do
       for n <- state[:neighbours], do:
-        send(state[:app_pl][self()], {:pl_deliver, n, {:msg, self()}})
+        send(state[:app_pl][self()], {n, :msg, self()})
       state = Map.update!(state, :msgs_left, fn x -> x - 1 end)
       state = Map.update!(state, :sent_counts, fn _ -> Enum.map(
         state[:sent_counts], fn x -> x + 1 end) end)
