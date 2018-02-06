@@ -1,6 +1,6 @@
 # Mihail Vanea (mv1315)
 
-MAIN    = System1.main
+MAIN    = System2.main
 PROJECT = da347
 NETWORK = $(PROJECT)_network
 
