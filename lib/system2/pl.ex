@@ -7,9 +7,9 @@ defmodule PL do
   end
 
   defp next(pl_list) do
-    {:bind, new_pl} -> 
-      pl_list = pl_list ++ new_pl 
-      next(pl_list)
+    {:bind, new_pl_list} -> 
+      pl_list = new_pl_list 
+      next(new_pl_list)
     {:pl_send, message, to} ->  
   end
 

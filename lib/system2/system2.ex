@@ -18,9 +18,9 @@ defmodule System2 do
   defp next(pl_list, peers) do
     receive do
       {:bind, pl} -> 
-        for p <- pl_list, do:
-          send(:bind, pl)
         pl_list = pl_list ++ p
+        for p <- pl_list, do:
+          send(:bind, pl_list)
         next(pl_list, peers)
     end
 
