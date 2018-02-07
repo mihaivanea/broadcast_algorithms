@@ -5,7 +5,7 @@ defmodule App do
   def start() do
     IO.puts(["App at ", DNS.my_ip_addr])
     receive do
-      {:bind, neighbours, system3} -> 
+      {:bind, neighbours, system3, beb} -> 
         state = %{}
         sent_counts = []
         received_counts = []
@@ -23,6 +23,7 @@ defmodule App do
         state = Map.put(state, :processing_batch, processing_batch)
         state = Map.put(state, :app_pl, %{})
         state = Map.put(state, :system3, system3)
+        state = Map.put(state, :beb, beb)
         next(state)
     end
   end
@@ -33,6 +34,7 @@ defmodule App do
         state = Map.put(state, :app_pl, app_pl)
         app_neighbours = Map.keys(state[:app_pl])
         state = Map.put(state, :neighbours, app_neighbours)
+        send(state[:beb], {:bind, app_pl[self()], self(), app_neighbours})
         send(state[:system3], {:ready})
         next(state)
       {:broadcast, msgs_left, timeout} -> 
@@ -50,8 +52,7 @@ defmodule App do
 
   defp broadcast(state, n) do
     if clock() < state[:deadline] and state[:msgs_left] > 0 do
-      for n <- state[:neighbours], do:
-        send(state[:app_pl][self()], {n, :msg, self()})
+      beb_broadcast(state, :msg)
       state = Map.update!(state, :msgs_left, fn x -> x - 1 end)
       state = Map.update!(state, :sent_counts, fn _ -> Enum.map(
         state[:sent_counts], fn x -> x + 1 end) end)
@@ -110,6 +111,10 @@ defmodule App do
 
   defp merge_lists([h1|t1], [h2|t2]) do 
     [" {", h1, ",", h2, "}"] ++ merge_lists(t1, t2) 
+  end
+
+  defp beb_broadcast(state, message) do
+    send(state[:beb], {:broadcast, message, self()})
   end
 
 end
