@@ -14,6 +14,7 @@ defmodule BEB do
         for n <- neighbours, do:
           send(pl, {:beb_broadcast, n, message, from})
       {:beb_broadcast, message, source} ->
+        # IO.puts("HEREEEEE")
         send(app, {message, source})
     end
     next(pl, app, neighbours)

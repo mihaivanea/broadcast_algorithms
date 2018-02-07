@@ -81,6 +81,17 @@ defmodule App do
           send(self(), {:finished})
           next(state)
         end
+    # When the last message close to deadline is lost, the system deadlocks
+    # as it it the countdown in the processing batch doesn't reach 0.
+    # Therefore I need a small time period to check if the deadline is reached
+    # and print the results
+    after 1 -> 
+      if clock() > state[:deadline] do
+        send(self(), {:finished})
+        next(state)
+      else
+        broadcast(state, state[:broadcast_batch])
+      end
     end
   end
 

@@ -22,12 +22,15 @@ defmodule LPL do
       {:pl_deliver, message, source} ->
         send(beb, {:beb_broadcast, message, source})
       {:beb_broadcast, destination, message, source} ->
-        r = Enum.random(1..100)
-        if r <= reliability do
-          send(app_pl[destination], {:pl_deliver, message, source})
-        end
+        lossy_send(app_pl[destination], {:pl_deliver, message, source}, reliability)
     end
     lossy_p2p_link(app_pl, app, beb, reliability)
+  end
+
+  defp lossy_send(destination, message, reliability) do
+    if :rand.uniform(100) <= reliability do
+      send(destination, message)
+    end
   end
 
 end
