@@ -31,8 +31,8 @@ defmodule System4 do
   end
 
   defp start_broadcast(app_pl, 0) do
-    max_broadcasts = 1000
-    timeout = 3000
+    max_broadcasts = 10_000_000
+    timeout = 30
     for pl <- Map.values(app_pl), do:
       send(pl, {:broadcast, max_broadcasts, timeout})
   end

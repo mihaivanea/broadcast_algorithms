@@ -4,7 +4,7 @@ defmodule LPL do
 
   def start() do
     IO.puts(["LPL at ", DNS.my_ip_addr])
-    reliability = 100
+    reliability = 50
     next(reliability)
   end
 
