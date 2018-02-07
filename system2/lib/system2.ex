@@ -26,8 +26,6 @@ defmodule System2 do
       {:bind, peer, app, pl} -> 
         peer_pl = Map.put(peer_pl, peer, pl)
         app_pl = Map.put(app_pl, app, pl)
-        for p <- Map.keys(peer_pl), do:
-          send(p, {:bind, peer_pl, app_pl})
         next(peer_pl, app_pl, no_peers - 1)
     end
   end
