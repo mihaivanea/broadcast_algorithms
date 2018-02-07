@@ -1,9 +1,9 @@
 # Mihail Vanea (mv1315)
 
-defmodule System5 do
+defmodule System6 do
 
   def main() do
-    IO.puts(["System5 at ", DNS.my_ip_addr()])
+    IO.puts(["System6 at ", DNS.my_ip_addr()])
     no_peers = 5
     peers = [] 
     peers = for _ <- 1..no_peers, do:
@@ -32,8 +32,8 @@ defmodule System5 do
   end
 
   defp start_broadcast(app_pl, 0, faulty_peer) do
-    max_broadcasts = 10_000_000
-    timeout = 30
+    max_broadcasts = 1000
+    timeout = 3000
     for pl <- Map.values(app_pl), do:
       send(pl, {:broadcast, max_broadcasts, timeout})
     Process.sleep(5)

@@ -5,14 +5,14 @@ defmodule App do
   def start() do
     IO.puts(["App at ", DNS.my_ip_addr])
     receive do
-      {:bind, neighbours, system5, beb} -> 
+      {:bind, neighbours, system6, beb, erb} -> 
         state = %{}
         sent_counts = []
         received_counts = []
         sent_counts = for _ <- neighbours, do: sent_counts ++ 0
         received_counts = for _ <- neighbours, do: received_counts ++ 0
-        broadcast_batch = 1000
-        processing_batch = 5000
+        broadcast_batch = 1
+        processing_batch = 5
         state = Map.put(state, :neighbours, neighbours)
         state = Map.put(state, :msgs_left, nil)
         state = Map.put(state, :deadline, :infinity)
@@ -22,8 +22,10 @@ defmodule App do
         state = Map.put(state, :processing_batch, processing_batch)
         state = Map.put(state, :processing_batch, processing_batch)
         state = Map.put(state, :app_pl, %{})
-        state = Map.put(state, :system5, system5)
+        state = Map.put(state, :system6, system6)
         state = Map.put(state, :beb, beb)
+        state = Map.put(state, :erb, erb)
+        state = Map.put(state, :seq_no, 0)
         next(state)
     end
   end
@@ -34,8 +36,9 @@ defmodule App do
         state = Map.put(state, :app_pl, app_pl)
         app_neighbours = Map.keys(state[:app_pl])
         state = Map.put(state, :neighbours, app_neighbours)
-        send(state[:beb], {:bind, app_pl[self()], self(), app_neighbours})
-        send(state[:system5], {:ready})
+        send(state[:beb], {:bind, app_pl[self()], state[:erb], app_neighbours})
+        send(state[:erb], {:bind, state[:beb], self()})
+        send(state[:system6], {:ready})
         next(state)
       {:broadcast, msgs_left, timeout} -> 
         state = Map.update!(state, :msgs_left, fn _ -> msgs_left end)
@@ -52,7 +55,11 @@ defmodule App do
 
   defp broadcast(state, n) do
     if clock() < state[:deadline] and state[:msgs_left] > 0 do
-      beb_broadcast(state, :msg)
+      message_index = 
+        Enum.find_index(state[:neighbours], fn x -> x == self() end)
+      message = message_index + state[:seq_no] * 10 
+      state = Map.update!(state, :seq_no, fn x -> x + 1 end)
+      erb_broadcast(state, message)
       state = Map.update!(state, :msgs_left, fn x -> x - 1 end)
       state = Map.update!(state, :sent_counts, fn _ -> Enum.map(
         state[:sent_counts], fn x -> x + 1 end) end)
@@ -69,7 +76,7 @@ defmodule App do
 
   defp process(state, n) do
     receive do
-      {:msg, source} ->
+      {_, source} ->
         if clock() < state[:deadline] do
           received_index = 
             Enum.find_index(state[:neighbours], fn x -> x == source end)
@@ -124,8 +131,8 @@ defmodule App do
     [" {", h1, ",", h2, "}"] ++ merge_lists(t1, t2) 
   end
 
-  defp beb_broadcast(state, message) do
-    send(state[:beb], {:broadcast, message, self()})
+  defp erb_broadcast(state, message) do
+    send(state[:erb], {:broadcast, message})
   end
 
 end
