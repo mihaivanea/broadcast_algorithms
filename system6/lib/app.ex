@@ -11,8 +11,8 @@ defmodule App do
         received_counts = []
         sent_counts = for _ <- neighbours, do: sent_counts ++ 0
         received_counts = for _ <- neighbours, do: received_counts ++ 0
-        broadcast_batch = 1
-        processing_batch = 5
+        broadcast_batch = 1000
+        processing_batch = 5000
         state = Map.put(state, :neighbours, neighbours)
         state = Map.put(state, :msgs_left, nil)
         state = Map.put(state, :deadline, :infinity)
